@@ -1,7 +1,6 @@
 #pragma once
 #include "interfaces/IQuestionRepository.hpp"
 #include "strategies/AnswerStrategyFactory.hpp"
-#include "dto/QuizResultDto.hpp"
 #include <expected>
 #include <memory>
 

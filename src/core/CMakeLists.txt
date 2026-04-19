@@ -1,10 +1,9 @@
-add_library(CowMeCore STATIC)
-add_library(CowMe::Core ALIAS CowMeCore)
+add_library(WaskMeCore STATIC)
+add_library(WaskMe::Core ALIAS WaskMeCore)
 
-target_sources(CowMeCore PRIVATE
+target_sources(WaskMeCore PRIVATE
 	entities/Question.hpp
 	entities/Quiz.hpp
-	entities/QuizResult.hpp
 	entities/HallOfFameEntry.hpp
 	enums/Difficulty.hpp
 	enums/AnswerStrategy.hpp
@@ -12,8 +11,7 @@ target_sources(CowMeCore PRIVATE
 	interfaces/IQuizRepository.hpp
 	interfaces/IHallOfFameRepository.hpp
 	value_objects/QuestionId.hpp
-	value_objects/QuizId.hpp
 )
 
-target_include_directories(CowMeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CowMeCore PUBLIC Qt6::Core)
+target_include_directories(WaskMeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(WaskMeCore PUBLIC Qt6::Core)

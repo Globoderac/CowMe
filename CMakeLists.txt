@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.27)
-project(CowMe VERSION 0.1.0 LANGUAGES CXX)
+project(WaskMe VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,13 +19,13 @@ add_subdirectory(src/application)
 add_subdirectory(src/infrastructure)
 add_subdirectory(src/presentation)
 
-qt_add_executable(CowMe ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
+qt_add_executable(WaskMe ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
-target_link_libraries(CowMe PRIVATE
-    CowMe::Presentation
-    CowMe::Infrastructure
-    CowMe::Application
-    CowMe::Core
+target_link_libraries(WaskMe PRIVATE
+    WaskMe::Presentation
+    WaskMe::Infrastructure
+    WaskMe::Application
+    WaskMe::Core
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
@@ -39,12 +39,12 @@ if(WIN32)
         HINTS "${Qt6_DIR}/../../../bin"
     )
     if(WINDEPLOYQT)
-        add_custom_command(TARGET CowMe POST_BUILD
+        add_custom_command(TARGET WaskMe POST_BUILD
             COMMAND "${WINDEPLOYQT}"
                 --no-translations
                 --no-system-d3d-compiler
                 --qmldir "${CMAKE_SOURCE_DIR}/src/presentation/qml"
-                "$<TARGET_FILE:CowMe>"
+                "$<TARGET_FILE:WaskMe>"
             COMMENT "Deploying Qt dependencies..."
         )
     endif()

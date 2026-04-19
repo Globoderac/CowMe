@@ -36,10 +36,56 @@ Page {
             }
 
             Label {
-                text: "🏆  Hall of Fame"
+                text: "Hall of Fame"
                 font { pixelSize: 22; weight: Font.Bold }
                 color: theme.textPrimary
                 Layout.fillWidth: true
+
+                MouseArea {
+                    anchors.fill: parent
+                    property int clickCount: 0
+                    property real lastClickTime: 0
+                    onClicked: function(mouse) {
+                        var now = Date.now()
+                        if (now - lastClickTime > 600)
+                            clickCount = 0
+                        lastClickTime = now
+                        clickCount++
+                        if (clickCount >= 3) {
+                            clickCount = 0
+                            hallOfFameVM.devMode = !hallOfFameVM.devMode
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dev mode banner
+        Rectangle {
+            visible: hallOfFameVM.devMode
+            Layout.fillWidth: true
+            Layout.topMargin: 8
+            height: 32
+            radius: 6
+            color: "#fff3cd"
+            border.color: "#ffc107"
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+
+                Label {
+                    text: "DEV MODE — Click X to delete entries"
+                    font { pixelSize: 12; weight: Font.DemiBold }
+                    color: "#856404"
+                    Layout.fillWidth: true
+                }
+                Label {
+                    text: "Triple-click title or F12 to close"
+                    font.pixelSize: 11
+                    color: "#856404"
+                }
             }
         }
 
@@ -48,6 +94,88 @@ Page {
             text: "Top scores ranked by correct answers, then fastest time"
             font.pixelSize: 12
             color: theme.textSecondary
+        }
+
+        // Statistics cards
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.topMargin: 16
+            spacing: 12
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 64
+                radius: 10
+                color: theme.surface
+                border.color: theme.border
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Label {
+                        text: hallOfFameVM.totalAttempts
+                        font { pixelSize: 20; weight: Font.Bold }
+                        color: theme.accent
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                    Label {
+                        text: "Total Attempts"
+                        font.pixelSize: 11
+                        color: theme.textMuted
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 64
+                radius: 10
+                color: theme.surface
+                border.color: theme.border
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Label {
+                        text: hallOfFameVM.averageScorePercent.toFixed(1) + "%"
+                        font { pixelSize: 20; weight: Font.Bold }
+                        color: theme.accent
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                    Label {
+                        text: "Avg Score"
+                        font.pixelSize: 11
+                        color: theme.textMuted
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 64
+                radius: 10
+                color: theme.surface
+                border.color: theme.border
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Label {
+                        text: hallOfFameVM.bestScore
+                        font { pixelSize: 20; weight: Font.Bold }
+                        color: theme.success
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                    Label {
+                        text: "Best Score"
+                        font.pixelSize: 11
+                        color: theme.textMuted
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
         }
 
         // Table header
@@ -100,6 +228,10 @@ Page {
                     color: theme.textSecondary
                     Layout.preferredWidth: 110
                     horizontalAlignment: Text.AlignRight
+                }
+                Item {
+                    visible: hallOfFameVM.devMode
+                    Layout.preferredWidth: 32
                 }
             }
         }
@@ -200,6 +332,26 @@ Page {
                                 color: theme.textMuted
                                 Layout.preferredWidth: 110
                                 horizontalAlignment: Text.AlignRight
+                            }
+
+                            Button {
+                                visible: hallOfFameVM.devMode
+                                Layout.preferredWidth: 32
+                                Layout.preferredHeight: 28
+                                contentItem: Label {
+                                    text: "X"
+                                    font { pixelSize: 12; weight: Font.Bold }
+                                    color: theme.error
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    radius: 6
+                                    color: parent.hovered ? theme.errorBg : "transparent"
+                                    border.color: parent.hovered ? Qt.rgba(0.78, 0.16, 0.16, 0.3) : "transparent"
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+                                }
+                                onClicked: hallOfFameVM.deleteEntry(modelData.id)
                             }
                         }
                     }

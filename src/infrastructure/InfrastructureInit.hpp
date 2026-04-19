@@ -13,6 +13,6 @@ struct InfrastructureServices {
     std::shared_ptr<core::IHallOfFameRepository> hallOfFameRepo;
 };
 
-[[nodiscard]] InfrastructureServices initializeInfrastructure(const QString& dbPath = "cowme.db");
+[[nodiscard]] InfrastructureServices initializeInfrastructure(const QString& dbPath = "waskme.db");
 
 } // namespace cowme::infrastructure

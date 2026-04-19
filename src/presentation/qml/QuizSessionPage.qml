@@ -11,6 +11,59 @@ Page {
     property int timeLimitSecs: 0
     background: Rectangle { color: theme.background }
 
+    // Wartsila watermark - bottom right
+    Image {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 20
+        width: 180; height: 180
+        source: "qrc:/assets/wartsila_text.png"
+        fillMode: Image.PreserveAspectFit
+        opacity: 0.05
+    }
+
+    // Decorative floating shapes
+    Rectangle {
+        x: parent.width * 0.92; y: parent.height * 0.15
+        width: 50; height: 50; radius: 25; color: theme.accent; opacity: 0.04
+        SequentialAnimation on y {
+            loops: Animation.Infinite
+            NumberAnimation { to: parent.height * 0.15 - 10; duration: 5000; easing.type: Easing.InOutSine }
+            NumberAnimation { to: parent.height * 0.15 + 10; duration: 5000; easing.type: Easing.InOutSine }
+        }
+    }
+    Rectangle {
+        x: parent.width * 0.03; y: parent.height * 0.65
+        width: 70; height: 70; radius: 10; color: theme.accent; opacity: 0.03
+        rotation: 45
+        SequentialAnimation on rotation {
+            loops: Animation.Infinite
+            NumberAnimation { to: 55; duration: 8000; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 45; duration: 8000; easing.type: Easing.InOutSine }
+        }
+    }
+    Rectangle {
+        x: parent.width * 0.88; y: parent.height * 0.80
+        width: 35; height: 35; radius: 17; color: theme.accent; opacity: 0.05
+    }
+    Rectangle {
+        x: parent.width * 0.06; y: parent.height * 0.10
+        width: 45; height: 45; radius: 6; color: theme.accent; opacity: 0.03
+    }
+
+    // Accent top bar
+    Rectangle {
+        anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right
+        height: 2
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "transparent" }
+            GradientStop { position: 0.2; color: theme.accent }
+            GradientStop { position: 0.8; color: theme.accent }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 28
@@ -103,25 +156,65 @@ Page {
         Rectangle {
             Layout.fillWidth: true
             Layout.topMargin: 16
-            height: 4; radius: 2
+            height: 6; radius: 3
             color: theme.progressTrack
 
             Rectangle {
                 width: quizSessionVM.totalQuestions > 0
                     ? parent.width * (quizSessionVM.currentIndex + 1) / quizSessionVM.totalQuestions
                     : 0
-                height: parent.height; radius: 2
-                color: theme.accent
+                height: parent.height; radius: 3
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: theme.accent }
+                    GradientStop { position: 1.0; color: Qt.lighter(theme.accent, 1.3) }
+                }
 
-                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+
+                // Animated shimmer on progress
+                Rectangle {
+                    anchors.right: parent.right
+                    width: 20; height: parent.height; radius: 3
+                    color: "white"; opacity: 0.3
+                    visible: parent.width > 0
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.0; duration: 800; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 0.3; duration: 800; easing.type: Easing.InOutSine }
+                    }
+                }
             }
         }
 
-        Label {
+        RowLayout {
             Layout.topMargin: 6
-            text: "Question " + (quizSessionVM.currentIndex + 1) + " of " + quizSessionVM.totalQuestions
-            font { pixelSize: 11; weight: Font.Medium }
-            color: theme.textMuted
+            spacing: 8
+
+            Label {
+                text: "Question " + (quizSessionVM.currentIndex + 1) + " of " + quizSessionVM.totalQuestions
+                font { pixelSize: 11; weight: Font.Medium }
+                color: theme.textMuted
+            }
+
+            // Streak indicator
+            Rectangle {
+                visible: quizSessionVM.score > 0
+                width: streakLabel.implicitWidth + 16; height: 20; radius: 10
+                color: Qt.rgba(0.1, 0.55, 0.25, 0.1)
+                border.color: Qt.rgba(0.1, 0.55, 0.25, 0.2)
+
+                Label {
+                    id: streakLabel
+                    anchors.centerIn: parent
+                    text: "🔥 " + quizSessionVM.score
+                    font { pixelSize: 10; weight: Font.Bold }
+                    color: theme.success
+                }
+
+                scale: 1.0
+                Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+            }
         }
 
         // ─── Finished State ───
@@ -194,6 +287,24 @@ Page {
                 text: quizSessionVM.score + " / " + quizSessionVM.totalQuestions + " correct"
                 font.pixelSize: 15
                 color: theme.textSecondary
+                opacity: 0
+                NumberAnimation on opacity {
+                    running: quizSessionVM.isFinished
+                    from: 0; to: 1; duration: 400
+                }
+            }
+
+            Label {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 4
+                text: {
+                    var s = quizSessionVM.elapsedSeconds
+                    var mins = Math.floor(s / 60)
+                    var secs = s % 60
+                    return "Time: " + mins + ":" + (secs < 10 ? "0" : "") + secs
+                }
+                font { pixelSize: 13; family: "Consolas" }
+                color: theme.textMuted
                 opacity: 0
                 NumberAnimation on opacity {
                     running: quizSessionVM.isFinished
@@ -424,13 +535,31 @@ Page {
             width: parent.width
             spacing: 0
 
-            // Question card
+            // Question card with entrance animation
             Rectangle {
+                id: questionCard
                 Layout.fillWidth: true
                 Layout.preferredHeight: questionCol.implicitHeight + 32
                 radius: 10
                 color: theme.surface
                 border.color: theme.border
+
+                // Subtle glow effect on new question
+                layer.enabled: true
+                layer.effect: null
+
+                opacity: 0
+                scale: 0.97
+                NumberAnimation on opacity {
+                    id: cardFadeIn
+                    running: false
+                    from: 0; to: 1; duration: 350; easing.type: Easing.OutCubic
+                }
+                NumberAnimation on scale {
+                    id: cardScaleIn
+                    running: false
+                    from: 0.97; to: 1.0; duration: 350; easing.type: Easing.OutCubic
+                }
 
                 ColumnLayout {
                     id: questionCol
@@ -516,6 +645,18 @@ Page {
                         Layout.preferredHeight: 46
 
                         enabled: !quizSessionVM.answerLocked
+
+                        // Staggered entrance animation
+                        opacity: 0
+                        Component.onCompleted: entranceAnim.start()
+                        SequentialAnimation {
+                            id: entranceAnim
+                            PauseAnimation { duration: optionBtn.index * 80 }
+                            ParallelAnimation {
+                                NumberAnimation { target: optionBtn; property: "opacity"; from: 0; to: 1; duration: 250; easing.type: Easing.OutCubic }
+                                NumberAnimation { target: optionBtn; property: "x"; from: 30; to: 0; duration: 250; easing.type: Easing.OutCubic }
+                            }
+                        }
 
                         contentItem: RowLayout {
                             spacing: 12
@@ -712,6 +853,17 @@ Page {
         }
     }
 
+    // Trigger card animation when question changes
+    Connections {
+        target: quizSessionVM
+        function onCurrentIndexChanged() {
+            questionCard.opacity = 0
+            questionCard.scale = 0.97
+            cardFadeIn.restart()
+            cardScaleIn.restart()
+        }
+    }
+
     Component.onCompleted: {
         if (quizId > 0) {
             if (timeLimitSecs > 0)
@@ -720,6 +872,8 @@ Page {
                 quizSessionVM.startQuizWithCount(quizId, questionCount)
             else
                 quizSessionVM.startQuiz(quizId)
+            cardFadeIn.start()
+            cardScaleIn.start()
         }
     }
 }

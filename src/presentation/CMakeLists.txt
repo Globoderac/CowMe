@@ -1,7 +1,7 @@
-add_library(CowMePresentation STATIC)
-add_library(CowMe::Presentation ALIAS CowMePresentation)
+add_library(WaskMePresentation STATIC)
+add_library(WaskMe::Presentation ALIAS WaskMePresentation)
 
-target_sources(CowMePresentation PRIVATE
+target_sources(WaskMePresentation PRIVATE
     viewmodels/QuizListViewModel.hpp
     viewmodels/QuizListViewModel.cpp
     viewmodels/QuizSessionViewModel.hpp
@@ -11,7 +11,7 @@ target_sources(CowMePresentation PRIVATE
     viewmodels/HallOfFameViewModel.hpp
 )
 
-qt_add_resources(CowMePresentation "qml"
+qt_add_resources(WaskMePresentation "qml"
     PREFIX "/"
     FILES
         qml/Main.qml
@@ -24,7 +24,8 @@ qt_add_resources(CowMePresentation "qml"
         assets/cpp_mascot.jpg
         assets/vessel.jpg
         assets/icon.png
+        assets/wartsila_text.png
 )
 
-target_include_directories(CowMePresentation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CowMePresentation PUBLIC CowMe::Application Qt6::Quick Qt6::QuickControls2)
+target_include_directories(WaskMePresentation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(WaskMePresentation PUBLIC WaskMe::Application Qt6::Quick Qt6::QuickControls2)

@@ -14,7 +14,7 @@ public:
         return mgr;
     }
 
-    [[nodiscard]] bool initialize(const QString& dbPath = "cowme.db") {
+    [[nodiscard]] bool initialize(const QString& dbPath = "waskme.db") {
         std::lock_guard lock(m_mutex);
         if (m_initialized) return true;
 

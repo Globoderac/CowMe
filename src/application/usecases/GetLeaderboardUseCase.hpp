@@ -17,6 +17,8 @@ public:
         return m_repo->getByQuizId(quizId);
     }
 
+    [[nodiscard]] std::shared_ptr<core::IHallOfFameRepository> repo() const { return m_repo; }
+
 private:
     std::shared_ptr<core::IHallOfFameRepository> m_repo;
 };

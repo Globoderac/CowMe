@@ -13,6 +13,7 @@ public:
     virtual std::expected<std::vector<HallOfFameEntry>, RepoError> getAll() const = 0;
     virtual std::expected<std::vector<HallOfFameEntry>, RepoError> getByQuizId(int quizId) const = 0;
     virtual std::expected<int, RepoError> add(const HallOfFameEntry& entry) = 0;
+    virtual std::expected<void, RepoError> removeById(int id) = 0;
 };
 
 } // namespace cowme::core

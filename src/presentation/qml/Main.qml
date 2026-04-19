@@ -9,8 +9,22 @@ ApplicationWindow {
     minimumWidth: 800
     minimumHeight: 560
     visible: true
-    title: "CowMe - Wartsila"
+    visibility: Window.FullScreen
+    title: "WaskMe - Wartsila"
     color: appTheme.background
+
+    Shortcut {
+        sequence: "F11"
+        onActivated: root.visibility = Window.FullScreen
+    }
+    Shortcut {
+        sequence: "Escape"
+        onActivated: root.visibility = Window.Windowed
+    }
+    Shortcut {
+        sequence: "F12"
+        onActivated: hallOfFameVM.devMode = !hallOfFameVM.devMode
+    }
 
     QtObject {
         id: appTheme
@@ -222,12 +236,29 @@ ApplicationWindow {
                 Label {
                     text: {
                         var n = Math.round(qSlider.value)
-                        if (n >= quizStartDialog.maxQuestions)
+                        var max = quizStartDialog.maxQuestions
+                        if (n >= max)
                             return "All questions (randomized order)"
-                        return "Balanced mix: ~30% Easy, ~35% Medium, ~25% Hard, ~10% Expert"
+                        var pct = max > 0 ? n / max : 0
+                        if (pct >= 0.9)
+                            return "Absolute masochist detected. We salute your suffering."
+                        if (pct >= 0.75)
+                            return "You enjoy pain, don't you? Bold choice."
+                        if (pct >= 0.5)
+                            return "Ambitious! Hope your coffee is strong."
+                        if (pct >= 0.3)
+                            return "Balanced mix: ~30% Easy, ~35% Medium, ~25% Hard, ~10% Expert"
+                        return "Just warming up? That's okay, we don't judge... much."
                     }
                     font.pixelSize: 11
-                    color: appTheme.textMuted
+                    color: {
+                        var n = Math.round(qSlider.value)
+                        var max = quizStartDialog.maxQuestions
+                        var pct = max > 0 ? n / max : 0
+                        if (pct >= 0.9) return appTheme.error
+                        if (pct >= 0.75) return "#e6a817"
+                        return appTheme.textMuted
+                    }
                     wrapMode: Text.Wrap
                     Layout.fillWidth: true
                 }

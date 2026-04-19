@@ -1,16 +1,14 @@
-add_library(CowMeApplication STATIC)
-add_library(CowMe::Application ALIAS CowMeApplication)
+add_library(WaskMeApplication STATIC)
+add_library(WaskMe::Application ALIAS WaskMeApplication)
 
-target_sources(CowMeApplication PRIVATE
+target_sources(WaskMeApplication PRIVATE
     dto/QuestionDto.hpp
     dto/QuizDto.hpp
-    dto/QuizResultDto.hpp
     strategies/IAnswerStrategy.hpp
     strategies/ComboSelectionStrategy.hpp
     strategies/TextInputStrategy.hpp
     strategies/CodeOutputMatchStrategy.hpp
     strategies/AnswerStrategyFactory.hpp
-    services/IQuizService.hpp
     usecases/StartQuizUseCase.hpp
     usecases/StartQuizUseCase.cpp
     usecases/SubmitAnswerUseCase.hpp
@@ -25,5 +23,5 @@ target_sources(CowMeApplication PRIVATE
     usecases/GetLeaderboardUseCase.hpp
 )
 
-target_include_directories(CowMeApplication PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CowMeApplication PUBLIC CowMe::Core)
+target_include_directories(WaskMeApplication PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(WaskMeApplication PUBLIC WaskMe::Core)

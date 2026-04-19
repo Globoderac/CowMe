@@ -63,6 +63,15 @@ public:
         return query.lastInsertId().toInt();
     }
 
+    std::expected<void, core::RepoError> removeById(int id) override {
+        QSqlQuery query(m_db.database());
+        query.prepare("DELETE FROM hall_of_fame WHERE id = ?");
+        query.addBindValue(id);
+        if (!query.exec()) return std::unexpected(core::RepoError::DatabaseError);
+        if (query.numRowsAffected() == 0) return std::unexpected(core::RepoError::NotFound);
+        return {};
+    }
+
 private:
     DatabaseManager& m_db;
 

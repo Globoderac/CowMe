@@ -58,6 +58,7 @@ Page {
 
             Button {
                 id: createBtn
+                visible: hallOfFameVM.devMode
                 Layout.preferredHeight: 34
                 contentItem: Label {
                     text: "+ Create"
@@ -226,6 +227,7 @@ Page {
                     // Edit button
                     Button {
                         id: editBtn
+                        visible: hallOfFameVM.devMode
                         Layout.preferredWidth: 32; Layout.preferredHeight: 32
                         opacity: card.isHovered ? 1.0 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -254,6 +256,7 @@ Page {
                     // Delete button
                     Button {
                         id: deleteBtn
+                        visible: hallOfFameVM.devMode
                         Layout.preferredWidth: 32; Layout.preferredHeight: 32
                         opacity: card.isHovered ? 1.0 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 150 } }

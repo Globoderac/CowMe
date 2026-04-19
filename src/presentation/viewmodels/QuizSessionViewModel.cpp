@@ -7,6 +7,70 @@
 
 namespace cowme::presentation {
 
+namespace {
+
+void selectAndShuffleQuestions(std::vector<application::QuestionDto>& questions, int count) {
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    if (count <= 0 || count >= static_cast<int>(questions.size())) {
+        std::ranges::shuffle(questions, rng);
+        return;
+    }
+
+    std::vector<application::QuestionDto> easy, medium, hard, expert;
+    for (auto& q : questions) {
+        switch (q.difficulty) {
+            case core::Difficulty::Easy:   easy.push_back(std::move(q)); break;
+            case core::Difficulty::Medium: medium.push_back(std::move(q)); break;
+            case core::Difficulty::Hard:   hard.push_back(std::move(q)); break;
+            case core::Difficulty::Expert: expert.push_back(std::move(q)); break;
+        }
+    }
+
+    std::ranges::shuffle(easy, rng);
+    std::ranges::shuffle(medium, rng);
+    std::ranges::shuffle(hard, rng);
+    std::ranges::shuffle(expert, rng);
+
+    // Weighted distribution: Easy ~30%, Medium ~35%, Hard ~25%, Expert ~10%
+    int nEasy   = static_cast<int>(std::round(count * 0.30));
+    int nMedium = static_cast<int>(std::round(count * 0.35));
+    int nHard   = static_cast<int>(std::round(count * 0.25));
+    int nExpert = count - nEasy - nMedium - nHard;
+
+    nEasy   = std::min(nEasy,   static_cast<int>(easy.size()));
+    nMedium = std::min(nMedium, static_cast<int>(medium.size()));
+    nHard   = std::min(nHard,   static_cast<int>(hard.size()));
+    nExpert = std::min(nExpert, static_cast<int>(expert.size()));
+
+    int total = nEasy + nMedium + nHard + nExpert;
+    auto fillFrom = [&](std::vector<application::QuestionDto>& pool, int& taken) {
+        while (total < count && taken < static_cast<int>(pool.size())) {
+            ++taken;
+            ++total;
+        }
+    };
+    fillFrom(easy, nEasy);
+    fillFrom(medium, nMedium);
+    fillFrom(hard, nHard);
+    fillFrom(expert, nExpert);
+
+    questions.clear();
+    auto take = [&](std::vector<application::QuestionDto>& pool, int n) {
+        for (int i = 0; i < n && i < static_cast<int>(pool.size()); ++i)
+            questions.push_back(std::move(pool[i]));
+    };
+    take(easy, nEasy);
+    take(medium, nMedium);
+    take(hard, nHard);
+    take(expert, nExpert);
+
+    std::ranges::shuffle(questions, rng);
+}
+
+} // anonymous namespace
+
 QuizSessionViewModel::QuizSessionViewModel(
     std::shared_ptr<application::StartQuizUseCase> startQuiz,
     std::shared_ptr<application::SubmitAnswerUseCase> submitAnswer,
@@ -46,16 +110,13 @@ QStringList QuizSessionViewModel::answerOptions() const {
 
 void QuizSessionViewModel::startQuiz(int quizId) {
     auto result = m_startQuiz->execute(quizId);
-    if (result) {
-        m_quiz = std::move(result.value());
-        m_quizId = quizId;
-        // Shuffle all questions
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::ranges::shuffle(m_quiz.questions, rng);
-        m_timeLimitSeconds = 0;
-        initQuizState();
-    }
+    if (!result) return;
+
+    m_quiz = std::move(result.value());
+    m_quizId = quizId;
+    selectAndShuffleQuestions(m_quiz.questions, -1);
+    m_timeLimitSeconds = 0;
+    initQuizState();
 }
 
 int QuizSessionViewModel::availableQuestionCount(int quizId) {
@@ -70,139 +131,18 @@ void QuizSessionViewModel::startQuizWithCount(int quizId, int count) {
 
     m_quiz = std::move(result.value());
     m_quizId = quizId;
-    auto& questions = m_quiz.questions;
-
-    if (count > 0 && count < static_cast<int>(questions.size())) {
-        // Separate by difficulty
-        std::vector<application::QuestionDto> easy, medium, hard, expert;
-        for (auto& q : questions) {
-            switch (q.difficulty) {
-                case core::Difficulty::Easy:   easy.push_back(std::move(q)); break;
-                case core::Difficulty::Medium: medium.push_back(std::move(q)); break;
-                case core::Difficulty::Hard:   hard.push_back(std::move(q)); break;
-                case core::Difficulty::Expert: expert.push_back(std::move(q)); break;
-            }
-        }
-
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::ranges::shuffle(easy, rng);
-        std::ranges::shuffle(medium, rng);
-        std::ranges::shuffle(hard, rng);
-        std::ranges::shuffle(expert, rng);
-
-        // Weighted distribution: Easy ~30%, Medium ~35%, Hard ~25%, Expert ~10%
-        int nEasy   = static_cast<int>(std::round(count * 0.30));
-        int nMedium = static_cast<int>(std::round(count * 0.35));
-        int nHard   = static_cast<int>(std::round(count * 0.25));
-        int nExpert = count - nEasy - nMedium - nHard;
-
-        // Clamp to available
-        nEasy   = std::min(nEasy,   static_cast<int>(easy.size()));
-        nMedium = std::min(nMedium, static_cast<int>(medium.size()));
-        nHard   = std::min(nHard,   static_cast<int>(hard.size()));
-        nExpert = std::min(nExpert, static_cast<int>(expert.size()));
-
-        // Fill remaining slots from whatever's available
-        int total = nEasy + nMedium + nHard + nExpert;
-        auto fillFrom = [&](std::vector<application::QuestionDto>& pool, int& taken) {
-            while (total < count && taken < static_cast<int>(pool.size())) {
-                taken++;
-                total++;
-            }
-        };
-        fillFrom(easy, nEasy);
-        fillFrom(medium, nMedium);
-        fillFrom(hard, nHard);
-        fillFrom(expert, nExpert);
-
-        questions.clear();
-        auto take = [&](std::vector<application::QuestionDto>& pool, int n) {
-            for (int i = 0; i < n && i < static_cast<int>(pool.size()); ++i)
-                questions.push_back(std::move(pool[i]));
-        };
-        take(easy, nEasy);
-        take(medium, nMedium);
-        take(hard, nHard);
-        take(expert, nExpert);
-
-        std::ranges::shuffle(questions, rng);
-    } else {
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::ranges::shuffle(questions, rng);
-    }
-
+    selectAndShuffleQuestions(m_quiz.questions, count);
     m_timeLimitSeconds = 0;
     initQuizState();
 }
 
 void QuizSessionViewModel::startQuizWithCountAndTime(int quizId, int count, int timeLimitSecs) {
-    // Reuse the count-based logic
     auto result = m_startQuiz->execute(quizId);
     if (!result) return;
 
     m_quiz = std::move(result.value());
     m_quizId = quizId;
-    auto& questions = m_quiz.questions;
-
-    if (count > 0 && count < static_cast<int>(questions.size())) {
-        std::vector<application::QuestionDto> easy, medium, hard, expert;
-        for (auto& q : questions) {
-            switch (q.difficulty) {
-                case core::Difficulty::Easy:   easy.push_back(std::move(q)); break;
-                case core::Difficulty::Medium: medium.push_back(std::move(q)); break;
-                case core::Difficulty::Hard:   hard.push_back(std::move(q)); break;
-                case core::Difficulty::Expert: expert.push_back(std::move(q)); break;
-            }
-        }
-
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::ranges::shuffle(easy, rng);
-        std::ranges::shuffle(medium, rng);
-        std::ranges::shuffle(hard, rng);
-        std::ranges::shuffle(expert, rng);
-
-        int nEasy   = static_cast<int>(std::round(count * 0.30));
-        int nMedium = static_cast<int>(std::round(count * 0.35));
-        int nHard   = static_cast<int>(std::round(count * 0.25));
-        int nExpert = count - nEasy - nMedium - nHard;
-
-        nEasy   = std::min(nEasy,   static_cast<int>(easy.size()));
-        nMedium = std::min(nMedium, static_cast<int>(medium.size()));
-        nHard   = std::min(nHard,   static_cast<int>(hard.size()));
-        nExpert = std::min(nExpert, static_cast<int>(expert.size()));
-
-        int total = nEasy + nMedium + nHard + nExpert;
-        auto fillFrom = [&](std::vector<application::QuestionDto>& pool, int& taken) {
-            while (total < count && taken < static_cast<int>(pool.size())) {
-                taken++;
-                total++;
-            }
-        };
-        fillFrom(easy, nEasy);
-        fillFrom(medium, nMedium);
-        fillFrom(hard, nHard);
-        fillFrom(expert, nExpert);
-
-        questions.clear();
-        auto take = [&](std::vector<application::QuestionDto>& pool, int n) {
-            for (int i = 0; i < n && i < static_cast<int>(pool.size()); ++i)
-                questions.push_back(std::move(pool[i]));
-        };
-        take(easy, nEasy);
-        take(medium, nMedium);
-        take(hard, nHard);
-        take(expert, nExpert);
-
-        std::ranges::shuffle(questions, rng);
-    } else {
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::ranges::shuffle(questions, rng);
-    }
-
+    selectAndShuffleQuestions(m_quiz.questions, count);
     m_timeLimitSeconds = timeLimitSecs;
     initQuizState();
 }
@@ -212,35 +152,35 @@ void QuizSessionViewModel::submitAnswer(const QString& answer) {
 
     auto questionId = m_quiz.questions[m_currentIndex].id;
     auto result = m_submitAnswer->execute(questionId, answer);
-    if (result) {
-        const auto& res = result.value();
-        m_answerLocked = true;
-        m_lastAnswerCorrect = res.correct;
+    if (!result) return;
 
-        QVariantMap entry;
-        entry[QStringLiteral("question")] = m_quiz.questions[m_currentIndex].title;
-        entry[QStringLiteral("userAnswer")] = answer;
-        entry[QStringLiteral("correctAnswer")] = res.correctAnswer;
-        entry[QStringLiteral("correct")] = res.correct;
-        m_answerResults.append(entry);
+    const auto& res = result.value();
+    m_answerLocked = true;
+    m_lastAnswerCorrect = res.correct;
 
-        if (res.correct) {
-            m_score++;
-            m_lastFeedback = QStringLiteral("Correct!");
-        } else {
-            m_lastFeedback = QString("Incorrect — the answer is: %1\n%2")
-                .arg(res.correctAnswer, res.explanation);
-        }
-        emit scoreChanged();
-        emit feedbackChanged();
+    QVariantMap entry;
+    entry[QStringLiteral("question")] = m_quiz.questions[m_currentIndex].title;
+    entry[QStringLiteral("userAnswer")] = answer;
+    entry[QStringLiteral("correctAnswer")] = res.correctAnswer;
+    entry[QStringLiteral("correct")] = res.correct;
+    m_answerResults.append(entry);
+
+    if (res.correct) {
+        ++m_score;
+        m_lastFeedback = QStringLiteral("Correct!");
+    } else {
+        m_lastFeedback = QString("Incorrect — the answer is: %1\n%2")
+            .arg(res.correctAnswer, res.explanation);
     }
+    emit scoreChanged();
+    emit feedbackChanged();
 }
 
 void QuizSessionViewModel::nextQuestion() {
     if (m_currentIndex + 1 >= totalQuestions()) {
         finishQuiz();
     } else {
-        m_currentIndex++;
+        ++m_currentIndex;
         m_lastFeedback.clear();
         m_answerLocked = false;
         m_lastAnswerCorrect = false;
@@ -284,7 +224,7 @@ void QuizSessionViewModel::onTimerTick() {
         return;
     }
 
-    m_remainingSeconds--;
+    --m_remainingSeconds;
     emit remainingSecondsChanged();
 
     if (m_remainingSeconds <= 0) {
